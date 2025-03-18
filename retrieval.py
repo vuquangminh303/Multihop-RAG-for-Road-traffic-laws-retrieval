@@ -8,7 +8,7 @@ from openai import OpenAI
 # kkhởi tạo client OpenRouter
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
-    api_key="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",
+    api_key="",
 )
 
 def mean_pooling(model_output, attention_mask):
