@@ -8,7 +8,7 @@ import numpy as np
 # kkhởi tạo client OpenRouter
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
-    api_key="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",
+    api_key="",
 )
 
 def mean_pooling(model_output, attention_mask):
@@ -112,12 +112,10 @@ if __name__ == "__main__":
         processed_queries = retriever.process_query(query)
         results = retriever.retrieve(processed_queries, k=5)
         
-        # Thu thập tất cả các segments từ kết quả
         all_segments = []
         for seg_list in results.values():
             all_segments.extend(seg_list)
         
-        # Lọc kết quả cho từng query
         filtered_results = []
         for q in processed_queries:
             filtered = retriever.filter_results(q, all_segments, threshold=0.55)
