@@ -3,6 +3,13 @@ import faiss
 from transformers import AutoTokenizer, AutoModel
 import torch
 from sentence_transformers import SentenceTransformer, util
+from openai import OpenAI
+
+# kkhởi tạo client OpenRouter
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key="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",
+)
 
 def mean_pooling(model_output, attention_mask):
     token_embeddings = model_output[0]
@@ -45,18 +52,48 @@ class VectorRetriever:
                 filtered_segments.append(seg)
         return filtered_segments
 
+def generate_response(query, context):
+    """Sử dụng OpenRouter để tổng hợp câu trả lời từ context"""
+    prompt = (
+        f"Dựa trên thông tin sau đây:\n\n{context}\n\n"
+        f"Hãy trả lời câu hỏi: '{query}' một cách ngắn gọn, rõ ràng và dễ hiểu."
+    )
+    completion = client.chat.completions.create(
+        model="meta-llama/llama-3.3-70b-instruct:free",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+    )
+    return completion.choices[0].message.content
+
+def format_segment(segment):
+    return (
+        f"**Kết quả từ tài liệu {segment['document_id']} (Segment {segment['segment_id']})**:\n"
+        f"{segment['content'][:]}...\n" 
+    )
+
 if __name__ == "__main__":
     try:
         retriever = VectorRetriever()
         query = input("Nhập câu hỏi của bạn: ")
+        # lấy các đoạn văn bản liên quan
         results = retriever.retrieve(query, k=5)
         filtered_results = retriever.filter_results(query, results, threshold=0.7)
+        
         if filtered_results:
+            # ttổng hợp nội dung từ các kết quả tìm được
+            context = "\n".join([res["content"] for res in filtered_results])
+            print("\n=== KẾT QUẢ TÌM KIẾM ===")
             for i, res in enumerate(filtered_results, 1):
-                print(f"Kết quả {i}:")
-                print(f"Document ID: {res['document_id']}")
-                print(f"Segment ID: {res['segment_id']}")
-                print(f"Content: {res['content'][:300]}...\n")
+                print(f"{format_segment(res)}")
+            
+            # ttạo câu trả lời bằng llmllm
+            response = generate_response(query, context)
+            print("\n=== CÂU TRẢ LỜI TỔNG HỢP ===")
+            print(response)
         else:
             print("Không tìm thấy kết quả nào phù hợp.")
     except Exception as e:

@@ -72,3 +72,13 @@ Thongtu/
 
 # Log files
 *.log
+accuracy*
+benchmark*
+memory*
+mock*
+run_all*
+scalability*
+cv_metrics.json
+extract*
+index*
+
