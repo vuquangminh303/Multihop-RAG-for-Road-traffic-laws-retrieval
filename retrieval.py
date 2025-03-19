@@ -5,10 +5,9 @@ import torch
 from sentence_transformers import SentenceTransformer, util
 from openai import OpenAI
 import numpy as np
-# kkhởi tạo client OpenRouter
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
-    api_key="",
+    api_key="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",
 )
 
 def mean_pooling(model_output, attention_mask):
@@ -55,7 +54,7 @@ class VectorRetriever:
         queries_embedding = []
         for query in queries:
             query_embedding = self.model.encode(query)
-            query_embedding = query_embedding.astype(np.float32)  # Chuyển sang float32
+            query_embedding = query_embedding.astype(np.float32)
             queries_embedding.append(query_embedding)
         return queries_embedding
 
@@ -64,7 +63,6 @@ class VectorRetriever:
         queries_embedding = self.encode(queries)
         results = {}
         for idx, query in enumerate(queries):
-            # Tạo mảng numpy 2D từ embedding
             embedding = np.expand_dims(queries_embedding[idx], axis=0)
             D, I = self.index.search(embedding, k)
             print(f"Truy vấn '{query}' tìm thấy {len(I[0])} kết quả thô")
@@ -80,13 +78,20 @@ class VectorRetriever:
             similarity = util.pytorch_cos_sim(query_embedding, seg_embedding).item()
             if similarity >= threshold:
                 filtered_segments.append(seg)
+                print(seg)
         return filtered_segments
 
-def generate_response(query, context):
+def generate_response(query, context,temperature = 0.1):
     """Sử dụng OpenRouter để tổng hợp câu trả lời từ context"""
     prompt = (
         f"Dựa trên thông tin sau đây:\n\n{context}\n\n"
-        f"Hãy trả lời câu hỏi: '{query}' một cách ngắn gọn, rõ ràng và dễ hiểu."
+        f"""Hãy trả lời câu hỏi: '{query}' một cách rõ ràng nêu xem điều bạn vừa nói trích xuất ở luật nào,
+        Nếu như người dùng có phạm tội thì hãy phân tích những tội đó ở đâu. Trả lời một cách ngắn gọn, trang trọng
+        Ví dụ:  
+        Query: Tốc độ tối đa của xe máy là bao nhiêu 
+        Answer: Dựa theo điều 8, etc, tốc độ tối đa của xe máy là
+        Dựa vào mẫu trên cùng với content hãy trả lời query của người dùng
+        """
     )
     completion = client.chat.completions.create(
         model="meta-llama/llama-3.3-70b-instruct:free",
@@ -95,7 +100,8 @@ def generate_response(query, context):
                 "role": "user",
                 "content": prompt
             }
-        ]
+        ],
+        temperature=temperature
     )
     return completion.choices[0].message.content
 
@@ -122,10 +128,10 @@ if __name__ == "__main__":
             filtered_results.extend(filtered)
         
         if filtered_results:
-            context = "\n".join([res["content"] for res in filtered_results])
-            print("\n=== KẾT QUẢ TÌM KIẾM ===")
-            for i, res in enumerate(filtered_results, 1):
-                print(f"{format_segment(res)}")
+            context = "\n".join([str('thông tin về content' + res["document_id"] + res["content"]) for res in filtered_results])
+            # print("\n=== KẾT QUẢ TÌM KIẾM ===")
+            # for i, res in enumerate(filtered_results, 1):
+            #     print(f"{format_segment(res)}")
             
             response = generate_response(query, context)
             print("\n=== CÂU TRẢ LỜI TỔNG HỢP ===")
