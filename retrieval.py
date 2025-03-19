@@ -5,15 +5,22 @@ import torch
 from sentence_transformers import SentenceTransformer, util
 from openai import OpenAI
 import numpy as np
+from langchain_core.pydantic_v1 import BaseModel, Field
+
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
-    api_key="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",
+    api_key="",
 )
 
-def mean_pooling(model_output, attention_mask):
-    token_embeddings = model_output[0]
-    mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-    return torch.sum(token_embeddings * mask_expanded, 1) / torch.clamp(mask_expanded.sum(1), min=1e-9)
+# def mean_pooling(model_output, attention_mask):
+#     token_embeddings = model_output[0]
+#     mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+#     return torch.sum(token_embeddings * mask_expanded, 1) / torch.clamp(mask_expanded.sum(1), min=1e-9)
+
+class GradeDocuments(BaseModel):
+    related: str = Field(
+        description= "Documents are relevant to the question just answer, 'yes' or 'no'"
+    )
 
 class VectorRetriever:
     def __init__(self):
