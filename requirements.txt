@@ -9,7 +9,7 @@ Pillow==11.1.0
 transformers==4.41.2
 huggingface-hub==0.28.1
 faiss-cpu==1.7.4
-numpy==1.24.3
+numpy==1.26.4
 torch==2.0.1
 
 # Các thư viện cho LLM và API
@@ -20,3 +20,10 @@ pydantic==1.10.8
 # Các thư viện hỗ trợ
 tqdm==4.65.0
 tokenizers>=0.13.3 
+sentence-transformers=3.4.1
+langchain
+rank_bm25=0.2.2
+langchain_google_genai=2.1.0
+google_generativeai=0.8.4
+
+langgraph=0.3.18
